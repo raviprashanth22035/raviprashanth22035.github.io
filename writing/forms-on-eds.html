@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brand-ready forms on Edge Delivery Services | Ravi Sadasivuni</title>
+  <meta name="description" content="Notes from a forms proof of concept on Edge Delivery Services: sheet-based forms, metadata-driven branding, no-backend submission and a local AI worker.">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header class="site">
+    <div class="wrap">
+      <a class="brand" href="../index.html">Ravi Sadasivuni</a>
+      <nav class="main" aria-label="Main">
+        <a href="../index.html">Home</a>
+        <a href="../experience.html">Experience</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../writing.html" aria-current="page">Writing</a>
+        <a href="../contact.html">Contact</a>
+        <button id="theme-toggle" type="button" aria-label="Toggle colour theme">Dark</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <article class="article">
+      <div class="page-title">
+        <h1>Brand-ready forms on Edge Delivery Services</h1>
+        <p class="post-meta">5 Nov 2026 | 4 min read</p>
+      </div>
+
+      <section class="block" style="border-top: 0;">
+        <p>I wanted to see how far Edge Delivery Services could go for forms without a heavy AEM backend. So I built a proof of concept on Adobe's forms boilerplate, authored in da.live, and pushed on three things: how forms are authored, how they get branded, and where AI can help without getting in the way.</p>
+
+        <h2>Forms as sheets</h2>
+        <p>Each form is a da.live sheet. One row is one field, with columns for name, label, type, mandatory, placeholder, options, error message, a rule expression and a style hint like <code>col-6</code> for half-width fields. The form block turns the sheet into a working form. A signup form with names, an email, a team dropdown and a country list needed no code at all.</p>
+
+        <h2>Branding without CSS per brand</h2>
+        <p>Every new brand or event wants its own logo, colours and font. I did not want a stylesheet for each one, so I used the bulk metadata that EDS already has.</p>
+        <ul>
+          <li>One <code>metadata</code> sheet at the site root, with a URL column that takes glob patterns such as <code>/brand/**</code>.</li>
+          <li>One column per property: title, subtitle, description, logo, background, text and link colours, card colour and font.</li>
+          <li>A small function in <code>scripts.js</code> reads those values and sets CSS custom properties on <code>:root</code>. A banner is added only when a logo is present, so internal test pages are untouched.</li>
+        </ul>
+        <p>Adding a brand is now two authoring steps: add a row to the sheet, then author pages under that prefix. A page's own metadata still wins, because that is how the platform behaves.</p>
+        <p>Two things bit me. The title property ends up in the page's <code>title</code> element, so any rich text typed into it is flattened to plain text. A separate subtitle property fixed that. And EDS auto-wraps classed divs placed as section children, then mistakes the wrapper for a block, so the logos are added as bare <code>picture</code> elements.</p>
+
+        <h2>Submitting without a backend</h2>
+        <p>I did not have AEM cloud access during the build, so submissions went to a Google Apps Script web app. That endpoint cannot answer a CORS preflight, and a JSON content type or any custom header triggers one. The fix is to keep the request a browser simple request:</p>
+        <pre><code>headers = { 'Content-Type': 'text/plain;charset=utf-8' };</code></pre>
+        <p>I added unit tests for the submit button too, including the case where a sheet sets both a redirect URL and a thank-you message. The redirect wins.</p>
+
+        <h2>AI at the edge, kept on a short leash</h2>
+        <p>The AI part is a local prototype: a Cloudflare Worker that sits in front of the dev server and calls a local model. It does two things.</p>
+        <ul>
+          <li><strong>Translation.</strong> When a form's JSON is requested with a language parameter, the worker translates only the display text: labels, descriptions, placeholders, error messages and option names.</li>
+          <li><strong>A team popup.</strong> It fetches a real next-game date from a public sports API and has the model write one line around that fact.</li>
+        </ul>
+        <div class="callout">
+          <p>The model never sees option codes, field names or rule expressions. The rule engine and the submitted payload depend on those exact values, so they stay out of the prompt.</p>
+        </div>
+        <p>If the model is down or returns bad JSON, the worker serves the original form. Translations are cached against the exact source JSON, so editing the sheet triggers one fresh translation and nothing more. It is a prototype, not a production setup. Dropdowns with more than 60 options are skipped, and the language is an explicit choice from the visitor, not geo detection.</p>
+
+        <h2>What I would carry forward</h2>
+        <ul>
+          <li>Keep AI away from anything the logic depends on. Let it touch words, not values.</li>
+          <li>Make failure invisible. A form that falls back to English beats a broken one.</li>
+          <li>Push variation into authoring. A sheet row is cheaper than a code change.</li>
+          <li>A text/plain request is the quickest way past a CORS preflight.</li>
+        </ul>
+
+        <div class="post-nav">
+          <a href="../writing.html">All writing</a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <span>Ravi Prashanth Sadasivuni</span>
+      &nbsp;|&nbsp;
+      <a href="https://www.linkedin.com/in/ravi-sadasivuni-6877631b8">LinkedIn</a>
+      &nbsp;|&nbsp;
+      <a href="https://github.com/raviprashanth22035">GitHub</a>
+    </div>
+  </footer>
+  <script src="../assets/site.js"></script>
+</body>
+</html>
