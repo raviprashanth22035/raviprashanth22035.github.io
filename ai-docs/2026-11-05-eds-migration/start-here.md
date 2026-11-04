@@ -30,4 +30,6 @@ Paste into Claude Code after `/goal`, once you have reviewed the first two pages
 
 ## Run log
 
-(Claude fills this in.)
+- 2026-11-05: Phase 0 done. Writing section and one article added to the source site.
+- 2026-11-05: Phase 1 and 2 built in one pass in Claude Code. Code pushed to `portfolio-eds` main, content in `portfolio-eds/da-content/`.
+- 2026-11-05: Local gate passes on all 6 pages at 1440 px and 360 px in light and dark. aem.page and da.live were not reachable from the session, so the staging check, editability probe and import are open. See `whats-left.md` and `inconsistencies.md`.
